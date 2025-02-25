@@ -1,0 +1,231 @@
+#
+#
+#
+from guizero import App, Window, TextBox, PushButton, Text, ButtonGroup, ListBox, Picture, Combo, Box, Slider, MenuBar, CheckBox, info, error # guizero for creating the windows and buttons
+import sqlite3 # sqlite3 for creating the database and sql querys
+import os # os for removing files like creating a new database file each time
+import os.path # os.path for for checking if a file exists in the path
+import sys # sys for importing other required modules
+import random # random for creating random strings
+import requests # requests for making api requests
+import matplotlib.pyplot as plt # for plottng graphs
+import time # time for wait and others
+import pandas as pd # pandas for sorting  the data for graphs
+import textwrap # for wrapping text to make it fit
+import datetime # datetime for getting dates and times
+import html # for converting requests to readable format
+import webbrowser # webbrowers for opening a website page
+from datetime import timedelta # timedelta for parsing dates for other use
+from dateutil import parser # parser for checking dates of premium plan
+
+
+###################################
+#                                 #
+#            DDL SQL              #
+#                                 #
+###################################
+
+
+sql = """
+CREATE TABLE "user" (
+    "userID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "usrUsername" TEXT,
+    "usrEmail" TEXT,
+    "usrPassword" TEXT,
+    "usrFirstName" TEXT,
+    "usrLastname" TEXT,
+    "usrPhoneNumber" TEXT,
+    "usrDOB" TEXT,
+    "usrIsStaff" BOOLEAN,
+    "usrPoints" TEXT,
+    "usrCreated" DATETIME
+);
+
+CREATE TABLE "orders" (
+    "orderID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "order_date" DATETIME,
+    "order_requiredBy" DATETIME,
+    "order_details" TEXT,
+    "order_totalcost" REAL,
+    "order_paid" BOOLEAN,
+    "order_ready" BOOLEAN,
+    "order_collected" BOOLEAN,
+    "userID" INTEGER,
+    FOREIGN KEY(userID) REFERENCES user(userID)
+);
+
+
+CREATE TABLE "product" (
+    "productID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "product_category" TEXT,
+    "product_desc" TEXT,
+    "product_size" TEXT,
+    "product_price" REAL
+);
+
+CREATE TABLE "review" (
+    "reviewID" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "review_date" DATETIME,
+    "review_desc" TEXT,
+    "review_rating" INTEGER,
+    "productID" INTEGER,
+    FOREIGN KEY(productID) REFERENCES product(productID)
+);
+
+insert into user (usrUsername, usrEmail, usrPassword, usrFirstName, usrLastname, usrPhoneNumber, usrDOB, usrIsStaff, usrPoints, usrCreated) values ('1','1@email.com','4dff4ea340f0a823f15d3f4f01ab62eae0e5da579ccb851f8db9dfe84c58b2b37b89903a740e1ee172da793a6e79d560e5f7f9bd058a12a280433ed6fa46510a','john','doe','07682687257','2010-04-25', 1, 0, '2024-02-07 10:42:32');
+insert into user (usrUsername, usrEmail, usrPassword, usrFirstName, usrLastname, usrPhoneNumber, usrDOB, usrIsStaff, usrPoints, usrCreated) values ('josh','josh@email.com','4dff4ea340f0a823f15d3f4f01ab62eae0e5da579ccb851f8db9dfe84c58b2b37b89903a740e1ee172da793a6e79d560e5f7f9bd058a12a280433ed6fa46510a','josh','aaa','07789257172','205-08-04', 0, 0, '2024-02-07 11:13:12');
+insert into user (usrUsername, usrEmail, usrPassword, usrFirstName, usrLastname, usrPhoneNumber, usrDOB, usrIsStaff, usrPoints, usrCreated) values ('mia','mia@email.com','4dff4ea340f0a823f15d3f4f01ab62eae0e5da579ccb851f8db9dfe84c58b2b37b89903a740e1ee172da793a6e79d560e5f7f9bd058a12a280433ed6fa46510a','mia','johnes','07418471938','2006-02-14', 0, 0, '2024-02-07 10:14:56');
+
+
+
+insert into product (product_category, product_desc, product_size, product_price) values ('Food', '{"Name":"Freshly Brewed Coffee","Description":"Rich, aromatic blend of freshly roasted coffee."}', 'Small', 2.50);
+insert into product (product_category, product_desc, product_size, product_price) values ('Food', '{"Name":"Iced Caramel Macchiato","Description":"Espresso with creamy milk and sweet caramel syrup, served over ice."}', 'Medium', 4.25);
+insert into product (product_category, product_desc, product_size, product_price) values ('Food', '{"Name":"Blueberry Muffin","Description":"Moist muffin bursting with juicy blueberries."}', 'N/A', 2.00);
+insert into product (product_category, product_desc, product_size, product_price) values ('Food', '{"Name":"Turkey and Swiss Panini","Description":"Sliced turkey breast and Swiss cheese on artisan bread."}', 'N/A', 6.50);
+insert into product (product_category, product_desc, product_size, product_price) values ('Food', '{"Name":"Chocolate Chunk Cookie","Description":"Soft and chewy cookie with chocolate chunks."}', 'N/A', 1.75);
+"""
+
+database_file = 'BeanBrew.db'
+# Delete the database
+# in case it already exists
+#
+
+##########################################
+#  code is used for testing the database #
+
+if os.path.exists(database_file):
+  os.remove(database_file)
+##
+## Connect to the database
+##
+conn = sqlite3.connect(database_file)
+## Get a cursor pointing to the database
+cursor = conn.cursor()
+## Create the tables
+cursor.executescript(sql)
+## Commit to save everything
+conn.commit()
+## Close the connection to the database
+conn.close()
+#
+
+def query_database(database_file, query): ### function to execute the query
+	Lconn = sqlite3.connect(database_file)
+	cur = Lconn.cursor()			# use a local cursor
+	cur.execute(query)
+	rows = cur.fetchall()
+	cur.close()
+	return rows
+
+def star1():
+# Procedure to set colour of stars
+  global review_stars
+  review_star1.text_color = "yellow"
+  review_star2.text_color = "black"
+  review_star3.text_color = "black"
+  review_star4.text_color = "black"
+  review_star5.text_color = "black"
+  review_stars = 1
+  
+def star2():
+# Procedure to set colour of stars
+  global review_stars
+  review_star1.text_color = "yellow"
+  review_star2.text_color = "yellow"
+  review_star3.text_color = "black"
+  review_star4.text_color = "black"
+  review_star5.text_color = "black"
+  review_stars = 2
+
+
+def star3():
+# Procedure to set colour of stars
+  global review_stars
+  review_star1.text_color = "yellow"
+  review_star2.text_color = "yellow"
+  review_star3.text_color = "yellow"
+  review_star4.text_color = "black"
+  review_star5.text_color = "black"
+  review_stars = 3
+
+
+def star4():
+# Procedure to set colour of stars
+  global review_stars
+  review_star1.text_color = "yellow"
+  review_star2.text_color = "yellow"
+  review_star3.text_color = "yellow"
+  review_star4.text_color = "yellow"
+  review_star5.text_color = "black"
+  review_stars = 4
+
+def star5():
+# Procedure to set colour of stars
+  global review_stars
+  review_star1.text_color = "yellow"
+  review_star2.text_color = "yellow"
+  review_star3.text_color = "yellow"
+  review_star4.text_color = "yellow"
+  review_star5.text_color = "yellow"
+  review_stars = 5
+
+def review():
+	global user_LoggedIn
+	if review_textbox.value == "":
+		info("Incorrect","INCORRECT!")
+	else: 
+		info("Success","Successfuly submitted!")
+		InsertdataSQL = "INSERT INTO review (review_desc,productID) VALUES (?,?)"
+		execute_sql(database_file,InsertdataSQL, (review_textbox.value)) #input the new user into the database
+
+
+def loadProducts(user_id):
+    #Clear existing items from the ListBox
+    Window_PreOrder_ProductBox.clear()
+    #Window_Review_ProductBox.clear()
+
+    # Fetch due tests for the user from the database
+
+    query = "SELECT productID, product_desc, product_size, product_price FROM product"
+    all_products = query_database(database_file, query)
+    rows = query_database(database_file, query)
+    numrows = len(rows)
+    for i in range (numrows):
+        Product = rows[i][1]
+        Window_PreOrder_ProductBox.append(Product)
+
+
+def execute_sql(database, sql_statement): #Function which executes the SQL statement to insert then update the rows
+	with sqlite3.connect(database) as Lconn:
+		cur = Lconn.cursor()
+		cur.execute(sql_statement, parameters)
+		return cur.lastrowid
+
+def loadprods():
+    loadProducts(1)
+
+
+#window
+review_window = App(bg="#d40f42")
+view_box1 = Box(review_window, width="fill", align="top")
+#star_button1 = PushButton(view_box1, text="★", width=2, command= star1,align="left")
+#star_button2 = PushButton(view_box1, text="★", width=2, command= star2,align="left")
+#star_button3 = PushButton(view_box1, text="★", width=2, command= star3,align="left")
+#star_button4 = PushButton(view_box1, text="★", width=2, command= star4,align="left")
+#star_button5 = PushButton(view_box1, text="★", width=2, command= star5,align="left")
+Window_PreOrder_ProductBox = Combo(view_box1, width=70, height=0, options=[""])
+products = PushButton(view_box1, text="PRODUCT", width=20, command= loadprods,align="left")
+review_star1 = Text(view_box1, text="★", align="left", size=20)
+review_star2 = Text(view_box1, text="★", align="left", size=20)
+review_star3 = Text(view_box1, text="★", align="left", size=20)
+review_star4 = Text(view_box1, text="★", align="left", size=20)
+review_star5 = Text(view_box1, text="★", align="left", size=20) # Creating stars
+review_textbox = TextBox(view_box1, text="", command=None,align="" ,width= 45 , height= 10 ,multiline=True)
+Review_Button = PushButton(view_box1, text="Submit Review", width=20, command= review,align="left")
+review_star1.when_clicked = star1
+review_star2.when_clicked = star2
+review_star3.when_clicked = star3
+review_star4.when_clicked = star4
+review_star5.when_clicked = star5
+
+review_window.display()
