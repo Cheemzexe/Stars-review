@@ -169,63 +169,106 @@ def star5():
   review_star5.text_color = "yellow"
   review_stars = 5
 
-def review():
-	global user_LoggedIn
-	if review_textbox.value == "":
-		info("Incorrect","INCORRECT!")
-	else: 
-		info("Success","Successfuly submitted!")
-		InsertdataSQL = "INSERT INTO review (review_desc,productID) VALUES (?,?)"
-		execute_sql(database_file,InsertdataSQL, (review_textbox.value)) #input the new user into the database
+def review(): # leave a review
+   global review_stars
+   from datetime import datetime
+   todays_date = datetime.today()
+   todays_date = todays_date.strftime("%Y-%m-%d")
+   if review_textbox.value == "":
+       info("Incorrect","INCORRECT!")
+   elif review_stars == 0:
+        info("error","errorr ERRORRR!")
+   else: 
+        info("Success","Successfuly submitted!")
+        productselect = Window_PreOrder_ProductBox.value
+        prod_ID = productselect[0]
+        InsertdataSQL = ("INSERT INTO review (review_date ,review_desc ,review_rating ,productID) VALUES ('"+ str(todays_date) +"', '"+ str(review_textbox.value) +"', '"+ str(review_stars) + "', '"+str(prod_ID) +"')")
+        execute_sql1(database_file,InsertdataSQL) #input the new user into the database
 
 
 def loadProducts(user_id):
     #Clear existing items from the ListBox
     Window_PreOrder_ProductBox.clear()
-    #Window_Review_ProductBox.clear()
+    Window_Review_ProductBox.clear()
 
     # Fetch due tests for the user from the database
 
-    query = "SELECT productID, product_desc, product_size, product_price FROM product"
+    query = "SELECT productID,product_desc, product_size, product_price FROM product"
     all_products = query_database(database_file, query)
     rows = query_database(database_file, query)
     numrows = len(rows)
     for i in range (numrows):
-        Product = rows[i][1]
-        Window_PreOrder_ProductBox.append(Product)
+       Product = rows[i][1]
+       productID = rows[i][0]
+       Product_price = rows[i][3]
+       formatted_row = str(productID) + " " + str(Product)  + " " + str(Product_price)
+       Window_PreOrder_ProductBox.append(formatted_row)
+       Window_Review_ProductBox.append(formatted_row)
 
 
-def execute_sql(database, sql_statement): #Function which executes the SQL statement to insert then update the rows
+def execute_sql1(database, sql_statement): #Function which executes the SQL statement to insert then update the rows
 	with sqlite3.connect(database) as Lconn:
 		cur = Lconn.cursor()
-		cur.execute(sql_statement, parameters)
+		cur.execute(sql_statement)
 		return cur.lastrowid
+
+def graph():
+    lconn = sqlite3.connect(database_file)
+    c = lconn.cursor()
+
+    c.execute("SELECT product_desc,AVG(review_rating) AS Average_Rating FROM product LEFT JOIN review ON product.productID = review.productID GROUP BY product.product_desc")
+    
+    data = c.fetchall()
+    df = pd.DataFrame(data,columns=["product_desc","Average_Rating"])
+    print(df)
+    lconn.close()
+
+    plt.bar(df["product_desc"],df["Average_Rating"],color="pink")
+    plt.xlabel("Product")
+    plt.ylabel("Average Rating")
+    plt.title("Average Ratings for each product")
+    plt.xticks(rotation=45)
+    #plt.tight_layout()
+    plt.show()
+
 
 def loadprods():
     loadProducts(1)
 
 
 #window
-review_window = App(bg="#d40f42")
+review_window = App(bg="#CAC8B6")
+review_window.hide()
 view_box1 = Box(review_window, width="fill", align="top")
-#star_button1 = PushButton(view_box1, text="★", width=2, command= star1,align="left")
-#star_button2 = PushButton(view_box1, text="★", width=2, command= star2,align="left")
-#star_button3 = PushButton(view_box1, text="★", width=2, command= star3,align="left")
-#star_button4 = PushButton(view_box1, text="★", width=2, command= star4,align="left")
-#star_button5 = PushButton(view_box1, text="★", width=2, command= star5,align="left")
-Window_PreOrder_ProductBox = Combo(view_box1, width=70, height=0, options=[""])
-products = PushButton(view_box1, text="PRODUCT", width=20, command= loadprods,align="left")
+Window_Review_ProductBox = Combo(view_box1, width=70, height=0, options=[""])
+
 review_star1 = Text(view_box1, text="★", align="left", size=20)
 review_star2 = Text(view_box1, text="★", align="left", size=20)
 review_star3 = Text(view_box1, text="★", align="left", size=20)
 review_star4 = Text(view_box1, text="★", align="left", size=20)
 review_star5 = Text(view_box1, text="★", align="left", size=20) # Creating stars
-review_textbox = TextBox(view_box1, text="", command=None,align="" ,width= 45 , height= 10 ,multiline=True)
-Review_Button = PushButton(view_box1, text="Submit Review", width=20, command= review,align="left")
+
+#products = PushButton(view_box1, text="PRODUCT", width=20, command= loadprods)
+#products.bg = "#93ccad"
+#products.font = "Britannic Bold"
+
+
+
+review_textbox = TextBox(view_box1, text="", command=None ,width= 45 , height= 10 ,multiline=True)
+Review_Button = PushButton(view_box1, text="Submit Review", width=20, command= review)
+Review_Button.bg = "#93ccad"
+Review_Button.font = "Britannic Bold"
+
+plot = PushButton(view_box1, text="PLOT", width=20, command= graph)
+plot.bg = "#93ccad"
+plot.font = "Britannic Bold"
+
+btn_back= PushButton(view_box1, text="Back", command=Back_Menu, width = 15)  #this allows the user to go back to the main menu
+btn_back.font = "Bodoni MT Black"
+btn_back.bg = "#93ccad"
+
 review_star1.when_clicked = star1
 review_star2.when_clicked = star2
 review_star3.when_clicked = star3
 review_star4.when_clicked = star4
 review_star5.when_clicked = star5
-
-review_window.display()
