@@ -88,24 +88,6 @@ def review(): # leave a review
         execute_sql1(database_file,InsertdataSQL) #input the new user into the database
 
 
-def loadProducts(user_id):
-    #Clear existing items from the ListBox
-    Window_PreOrder_ProductBox.clear()
-    Window_Review_ProductBox.clear()
-
-    # Fetch due tests for the user from the database
-
-    query = "SELECT productID,product_desc, product_size, product_price FROM product"
-    all_products = query_database(database_file, query)
-    rows = query_database(database_file, query)
-    numrows = len(rows)
-    for i in range (numrows):
-       Product = rows[i][1]
-       productID = rows[i][0]
-       Product_price = rows[i][3]
-       formatted_row = str(productID) + " " + str(Product)  + " " + str(Product_price)
-       Window_PreOrder_ProductBox.append(formatted_row)
-       Window_Review_ProductBox.append(formatted_row)
 
 
 def execute_sql1(database, sql_statement): #Function which executes the SQL statement to insert then update the rows
